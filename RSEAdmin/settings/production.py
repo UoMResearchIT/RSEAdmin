@@ -7,6 +7,7 @@ import ldap
 import logging
 import os
 
+from django_auth_ldap.config import LDAPSearch
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import *
