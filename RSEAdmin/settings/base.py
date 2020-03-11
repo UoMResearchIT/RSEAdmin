@@ -103,7 +103,7 @@ LOGOUT_REDIRECT_URL = 'login'
 
 DATE_FORMAT = 'd/m/Y'
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'en-gb'
 
 TIME_ZONE = 'Europe/London'
 
