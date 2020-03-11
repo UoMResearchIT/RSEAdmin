@@ -3,7 +3,10 @@ Django settings for RSEAdmin project PRODUCTION.
 
 """
 import json
+import ldap
+import logging
 import os
+
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import *
@@ -78,6 +81,34 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': '',
     }
+}
+
+# ----------------------------------------------------------------------------
+# Authentication Backend and LDAP Settings
+# ----------------------------------------------------------------------------
+# 
+# ----------------------------------------------------------------------------
+
+AUTHENTICATION_BACKENDS = (
+    'django_auth_ldap.backend.LDAPBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+AUTH_LDAP_GLOBAL_OPTIONS = {
+    ldap.OPT_X_TLS_REQUIRE_CERT: False,
+    ldap.OPT_REFERRALS: False,
+}
+
+AUTH_LDAP_SERVER_URI = get_secret('AUTH_LDAP_SERVER_URI')
+AUTH_LDAP_BIND_DN = ''
+AUTH_LDAP_BIND_PASSWORD = ''
+AUTH_LDAP_ALWAYS_UPDATE_USER = True
+AUTH_LDAP_USER_SEARCH = LDAPSearch(get_secret('AUTH_LDAP_USER_SEARCH_ARGS'), ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
+AUTH_LDAP_REQUIRE_GROUP = get_secret('AUTH_LDAP_REQUIRE_GROUP')
+AUTH_LDAP_USER_ATTR_MAP = {
+    "first_name": "givenName",
+    "last_name": "sn",
+    "email": "mail",
 }
 
 # ----------------------------------------------------------------------------
