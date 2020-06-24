@@ -7,9 +7,16 @@ import ldap
 import logging
 import os
 
+from django_auth_ldap.config import LDAPSearch
 from django.core.exceptions import ImproperlyConfigured
 
+from rse.auth import GroupMembershipDNGroupType
+
 from .base import *
+
+logger = logging.getLogger('django_auth_ldap')
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.DEBUG)
 
 # ----------------------------------------------------------------------------
 # Debug Settings
@@ -103,8 +110,11 @@ AUTH_LDAP_SERVER_URI = get_secret('AUTH_LDAP_SERVER_URI')
 AUTH_LDAP_BIND_DN = ''
 AUTH_LDAP_BIND_PASSWORD = ''
 AUTH_LDAP_ALWAYS_UPDATE_USER = True
+AUTH_LDAP_GROUP_TYPE = GroupMembershipDNGroupType()
 AUTH_LDAP_USER_SEARCH = LDAPSearch(get_secret('AUTH_LDAP_USER_SEARCH_ARGS'), ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
+AUTH_LDAP_GROUP_SEARCH = LDAPSearch(get_secret('AUTH_LDAP_GROUP_SEARCH_ARGS'), ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
 AUTH_LDAP_REQUIRE_GROUP = get_secret('AUTH_LDAP_REQUIRE_GROUP')
+AUTH_LDAP_REQUIRE_GROUP = "cn=admin-mc-ResearchIT-all,ou=mc,ou=admin,ou=uman,o=ac,c=uk"
 AUTH_LDAP_USER_ATTR_MAP = {
     "first_name": "givenName",
     "last_name": "sn",
