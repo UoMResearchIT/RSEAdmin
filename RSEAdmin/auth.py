@@ -51,43 +51,12 @@ x standard settings for django_auth_ldap.
 
 import ldap
 
-from django_auth_ldap.backend import populate_user
 from django_auth_ldap.config import LDAPSearch, LDAPGroupType
 from django.conf import settings
-from django.dispatch import receiver
-
-
-@receiver(populate_user)
-def assign_user_status(sender, **kwargs):
-    # Debug prints that appear in ./manage.py runserver logs
-    print("assign_user_status()")
-    print(kwargs['user'])
-    print(settings.XAUTH_LDAP_REQUIRE_IS_STAFF_GROUP)
-    print(settings.XAUTH_LDAP_REQUIRE_IS_SUPERUSER_GROUP)
-
-    # Set membership boolean against existence of specified group names in returned user data
-    # is_active should be set by standard user authentication
-    # is_staff checks against defined STAFF_GROUP and allows admin access (but not superuser)
-    # is_superuser checks against SUPERUSER_GROUP and allows full control
-
-    # TODO: Confirm is_staff/is_superuser do impart these permissions
-    # Note: It is possible to define other wagtail/django permissions but these would normally be
-    # assigned by site admins in the web admin UI
-
-    kwargs['user'].is_staff = settings.XAUTH_LDAP_REQUIRE_IS_STAFF_GROUP in kwargs['ldap_user'].attrs['groupMembership']
-    kwargs['user'].is_superuser = settings.XAUTH_LDAP_REQUIRE_IS_SUPERUSER_GROUP  in kwargs['ldap_user'].attrs['groupMembership']
-
-    # Final debug to show correct assignment
-
-    print(kwargs['user'].is_active)
-    print(kwargs['user'].is_staff)
-    print(kwargs['user'].is_superuser)
-
-    print("assign_user_status() DONE!")
-
 
 # for settings.py
-# from rse.auth import GroupMembershipDNGroupType
+# from RSEAdmin.auth import GroupMembershipDNGroupType
+
 
 class GroupMembershipDNGroupType(LDAPGroupType):
     """
@@ -107,24 +76,15 @@ class GroupMembershipDNGroupType(LDAPGroupType):
         return "<{}: {}>".format(type(self).__name__, self.member_attr)
 
     def user_groups(self, ldap_user, group_search):
-        #print("GroupMembershipDNGroupType::user_groups()")
         search = group_search.search_with_additional_terms(
             {self.member_attr: ldap_user.dn}
         )
-        #print("Done!")
         return search.execute(ldap_user.connection)
 
     def is_member(self, ldap_user, group_dn):
-        print("GroupMembershipDNGroupType::is_member()")
-        print(ldap_user, group_dn)
-        print(ldap_user.attrs[self.member_attr])
-        print(settings.AUTH_LDAP_REQUIRE_GROUP)
-
         try:
             result = settings.AUTH_LDAP_REQUIRE_GROUP in ldap_user.attrs[self.member_attr]
         except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
             result = 0
-
-        print("Done!")
 
         return result
