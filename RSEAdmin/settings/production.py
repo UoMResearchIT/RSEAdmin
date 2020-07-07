@@ -10,7 +10,7 @@ import os
 from django_auth_ldap.config import LDAPSearch
 from django.core.exceptions import ImproperlyConfigured
 
-from rse.auth import GroupMembershipDNGroupType
+from RSEAdmin.auth import GroupMembershipDNGroupType
 
 from .base import *
 
@@ -114,11 +114,14 @@ AUTH_LDAP_GROUP_TYPE = GroupMembershipDNGroupType()
 AUTH_LDAP_USER_SEARCH = LDAPSearch(get_secret('AUTH_LDAP_USER_SEARCH_ARGS'), ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
 AUTH_LDAP_GROUP_SEARCH = LDAPSearch(get_secret('AUTH_LDAP_GROUP_SEARCH_ARGS'), ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
 AUTH_LDAP_REQUIRE_GROUP = get_secret('AUTH_LDAP_REQUIRE_GROUP')
-AUTH_LDAP_REQUIRE_GROUP = "cn=admin-mc-ResearchIT-all,ou=mc,ou=admin,ou=uman,o=ac,c=uk"
 AUTH_LDAP_USER_ATTR_MAP = {
     "first_name": "givenName",
     "last_name": "sn",
     "email": "mail",
+}
+AUTH_LDAP_USER_FLAGS_BY_GROUP = {
+    "is_staff": get_secret('AUTH_LDAP_REQUIRE_GROUP'),
+    "is_superuser": get_secret('AUTH_LDAP_REQUIRE_GROUP'),
 }
 
 # ----------------------------------------------------------------------------
