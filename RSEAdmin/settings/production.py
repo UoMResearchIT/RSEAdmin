@@ -120,8 +120,8 @@ AUTH_LDAP_USER_ATTR_MAP = {
     "email": "mail",
 }
 AUTH_LDAP_USER_FLAGS_BY_GROUP = {
-    "is_staff": get_secret('AUTH_LDAP_REQUIRE_GROUP'),
-    "is_superuser": get_secret('AUTH_LDAP_REQUIRE_GROUP'),
+    "is_staff": get_secret('XAUTH_LDAP_SUPERUSER_GROUP'),
+    "is_superuser": get_secret('XAUTH_LDAP_SUPERUSER_GROUP'),
 }
 
 # ----------------------------------------------------------------------------
