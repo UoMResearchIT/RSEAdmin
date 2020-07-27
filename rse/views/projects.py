@@ -76,7 +76,7 @@ def project(request: HttpRequest, project_id) -> HttpResponse:
     return render(request, 'project.html', view_dict)
 
 
-@login_required
+@user_passes_test(lambda u: u.has_perm('rse.add_allocatedproject') or u.has_perm('rse.add_serviceproject'))
 def project_new(request: HttpRequest) -> HttpResponse:
 
     # Dict for view
@@ -99,7 +99,7 @@ def project_new(request: HttpRequest) -> HttpResponse:
     return render(request, 'project_new.html', view_dict)
 
 
-@login_required
+@user_passes_test(lambda u: u.has_perm('rse.add_allocatedproject'))
 def project_new_allocated(request: HttpRequest) -> HttpResponse:
 
     # Dict for view
@@ -135,7 +135,8 @@ def project_new_allocated(request: HttpRequest) -> HttpResponse:
     
     return render(request, 'project_allocated_new.html', view_dict)
 
-@login_required
+
+@user_passes_test(lambda u: u.has_perm('rse.add_serviceproject'))
 def project_new_service(request: HttpRequest) -> HttpResponse:
 
     # Dict for view
@@ -172,7 +173,7 @@ def project_new_service(request: HttpRequest) -> HttpResponse:
     return render(request, 'project_service_new.html', view_dict)
 
  
-@login_required
+@user_passes_test(lambda u: u.has_perm('rse.change_allocatedproject') or u.has_perm('rse.change_serviceproject'))
 def project_edit(request: HttpRequest, project_id) -> HttpResponse:
     
     # Get the project (as generic project to ensure correct ID)
@@ -183,9 +184,13 @@ def project_edit(request: HttpRequest, project_id) -> HttpResponse:
     
     # depending on project type change the form and template
     if isinstance(proj, AllocatedProject):
+        if not request.user.has_perm('rse.change_allocatedproject'):
+            return HttpResponseRedirect(reverse_lazy('login'))
         formclass = AllocatedProjectForm
         template = 'project_allocated_new.html'
     else :
+        if not request.user.has_perm('rse.change_serviceproject'):
+            return HttpResponseRedirect(reverse_lazy('login'))
         formclass = ServiceProjectForm
         template = 'project_service_new.html'
 
@@ -207,7 +212,6 @@ def project_edit(request: HttpRequest, project_id) -> HttpResponse:
     return render(request, template, view_dict)
  
 
- 
 @user_passes_test(lambda u: u.is_superuser)
 def project_allocations_edit(request: HttpRequest, project_id) -> HttpResponse:
     # Get the project
@@ -241,6 +245,7 @@ def project_allocations_edit(request: HttpRequest, project_id) -> HttpResponse:
     view_dict['form'] = form
 
     return render(request, 'project_allocations_edit.html', view_dict)
+
 
 @user_passes_test(lambda u: u.is_superuser)
 def project_allocations(request: HttpRequest, project_id) -> HttpResponse:
@@ -287,6 +292,7 @@ class project_allocations_delete(UserPassesTestMixin, DeleteView):
         self.object.save()
         return HttpResponseRedirect(success_url)
     
+
 class project_delete(UserPassesTestMixin, DeleteView):
     """ POST only special delete view which redirects to project allocation view """
     model = Project
