@@ -5,47 +5,48 @@ auth.py
 Summary:
 
 Defines a custom LDAPGroupType "GroupMembershipDNGroupType" to handle
-group membership authentication tests and approval/rejection; and
-implements an "assign_user_status" callback which is triggered by the
-Django "populate_user" signal to correctly set is_staff and
-is_superuser flags (RSEAdmin REQUIRES superuser status to function)
+group membership authentication queries for approval/rejection.
 
 Background:
 
-The UoM/ITS implementation of LDAP groups is unusual and doesn't seem
-to follow any of the standard approaches as defined in the
+The UoM/ITS implementation of LDAP groups is doesn't seem to match
+any of the standard LDAPGroup approaches defined in the
 django_auth_ldap documentation. It was therefore a challenge to test
 if otherwise authenticated users are members of one (or more) groups
 and set the necessary Django user flags.
 
+User group membership is held within the individual user records,
+rather than through the use of separate LDAP groups. Each user record
+contains a list of groupMembership entries that the user belongs to.
+
 Solution:
 
 Setup django_auth_ldap settings as required for user authentication
-(correct password etc) and then use the same user search query for
-group search too (this must be defined though it's not used directly)
+(correct password etc.) and then use the same query as used for the
+user authentication query to retrieve the same information - which
+holds the groupMembership data.
 
 The custom GroupMembershipDNGroupType GroupType class implements new
 functionality to test if the returned user data has a groupMembership
-attribute that matches the one defined in the settings.
+attribute, which in turn has a list of entries for groupMembership
+as returned by the LDAP server). It then checks if the group DN
+being queried matches at least one of the entries.
 
-Once the user is authenticated (both username/password and group
-membership requirements) the process moves onto the preparation of
-the Django user data. The django_auth_ldap signal "populate_user"
-triggers the assign_user_status method, which can check again (or
-possibly check other defined groups) to see if is_staff and
-is_superuser flags may be set to True.
+Usage:
 
+The default user authentication is specifed by the
+AUTH_LDAP_REQUIRE_GROUP setting.
 
+If that passes, authentication continues with additional tests for
+entries in AUTH_LDAP_USER_FLAGS_BY_GROUP which will set flags based
+on possibly multiple group memberships e.g., those for superuser
+access.
 
-x The values of settings.XAUTH_LDAP_REQUIRE_IS_STAFF_GROUP and
-x settings.XAUTH_LDAP_REQUIRE_IS_SUPERUSER_GROUP entries can then be tested
-x against entries in the kwargs['ldap_user'].attrs['groupMembership'] object. The
-x latter is returned by the UoM/ITS LDAP Active Directory service.
+Import:
 
-x Notes:
-x Both settings.XAUTH_LDAP_REQUIRE_IS_STAFF_GROUP and settings.XAUTH_LDAP_REQUIRE_IS_SUPERUSER_GROUP
-x settings are additional settings provided for this solution (hence the prefix of X) and are not
-x standard settings for django_auth_ldap.
+For settings file e.g., settings/production.py use the following import:
+
+from RSEAdmin.auth import GroupMembershipDNGroupType
 
 '''
 
@@ -54,13 +55,11 @@ import ldap
 from django_auth_ldap.config import LDAPSearch, LDAPGroupType
 from django.conf import settings
 
-# for settings.py
-# from RSEAdmin.auth import GroupMembershipDNGroupType
-
 
 class GroupMembershipDNGroupType(LDAPGroupType):
     """
-    A group type that stores a list of groupMembership as distinguished names.
+    A group type that stores a list of groupMembership as distinguished names
+    in an attribute of the user record returned by the LDAP server.
     """
 
     def __init__(self, member_attr="groupMembership", name_attr="cn"):
@@ -82,8 +81,16 @@ class GroupMembershipDNGroupType(LDAPGroupType):
         return search.execute(ldap_user.connection)
 
     def is_member(self, ldap_user, group_dn):
+        """
+        Test of groupMembership.
+        Use lowercase for all tests e.g., passed group_dn *and* each entry in the list.
+        Return True if at least one entry in the member_attr list matches the passed group_dn.
+        """
+
+        group_dn = group_dn.lower()
+        
         try:
-            result = settings.AUTH_LDAP_REQUIRE_GROUP in ldap_user.attrs[self.member_attr]
+            result = group_dn in [grp.lower() for grp in ldap_user.attrs[self.member_attr]]
         except (ldap.UNDEFINED_TYPE, ldap.NO_SUCH_ATTRIBUTE):
             result = 0
 
