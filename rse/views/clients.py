@@ -53,7 +53,8 @@ def client(request: HttpRequest, client_id) -> HttpResponse:
 
     return render(request, 'client.html', view_dict)
 
-@login_required
+
+@user_passes_test(lambda u: u.has_perm('rse.add_client'))
 def client_new(request: HttpRequest) -> HttpResponse:
 
     # Dict for view
@@ -78,7 +79,8 @@ def client_new(request: HttpRequest) -> HttpResponse:
     
     return render(request, 'client_new.html', view_dict)
  
-@login_required
+
+@user_passes_test(lambda u: u.has_perm('rse.change_client'))
 def client_edit(request: HttpRequest, client_id) -> HttpResponse:
     
     # Get the project (as generic project to ensure correct ID)
@@ -104,6 +106,7 @@ def client_edit(request: HttpRequest, client_id) -> HttpResponse:
     
     return render(request, 'client_new.html', view_dict)
  
+
 class client_delete(UserPassesTestMixin, DeleteView):
     """ POST only special delete view which redirects to clients list view """
     model = Client
